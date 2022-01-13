@@ -7,7 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
-sm_client = boto3.client("sagemaker")
+sm_client = boto3.client("sagemaker",region_name="us-east-1")
 
 
 def get_approved_package(model_package_group_name):
@@ -76,8 +76,8 @@ def extend_config(args, model_package_arn, stage_config):
     }
     new_tags = {
         "sagemaker:deployment-stage": stage_config["Parameters"]["StageName"],
-        "sagemaker:project-id": args.sagemaker_project_id,
-        "sagemaker:project-name": args.sagemaker_project_name,
+        # "sagemaker:project-id": args.sagemaker_project_id,
+        # "sagemaker:project-name": args.sagemaker_project_name,
     }
     return {
         "Parameters": {**stage_config["Parameters"], **new_params},
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     parser.add_argument("--log-level", type=str, default=os.environ.get("LOGLEVEL", "INFO").upper())
     parser.add_argument("--model-execution-role", type=str, required=True)
     parser.add_argument("--model-package-group-name", type=str, required=True)
-    parser.add_argument("--sagemaker-project-id", type=str, required=True)
+    # parser.add_argument("--sagemaker-project-id", type=str, required=True)
     parser.add_argument("--sagemaker-project-name", type=str, required=True)
     parser.add_argument("--import-staging-config", type=str, default="staging-config.json")
     parser.add_argument("--import-prod-config", type=str, default="prod-config.json")

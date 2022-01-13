@@ -8,13 +8,21 @@ pipeline {
           EXPORT_TEMPLATE_PROD_CONFIG = 'prod-config-export.json'
           EXPORT_TEMPLATE_PROD_PARAMS = 'prod-params-export.json'
           EXPORT_TEMPLATE_PROD_TAGS = 'prod-tags-export.json'
-          STACK_NAME_DEPLOY_STAGING = """${sh(
+          /*STACK_NAME_DEPLOY_STAGING = """${sh(
                 returnStdout: true,
                 script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-${SAGEMAKER_PROJECT_ID}-deploy-staging"'
             ).trim()}"""
           STACK_NAME_DEPLOY_PROD = """${sh(
                 returnStdout: true,
                 script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-${SAGEMAKER_PROJECT_ID}-deploy-prod"'
+            ).trim()}"""*/
+          STACK_NAME_DEPLOY_STAGING = """${sh(
+                returnStdout: true,
+                script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-deploy-staging"'
+            ).trim()}"""
+          STACK_NAME_DEPLOY_PROD = """${sh(
+                returnStdout: true,
+                script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-deploy-prod"'
             ).trim()}"""
           EXPORT_TEST_RESULTS = 'test-results.json'
   }
@@ -26,9 +34,15 @@ pipeline {
     }
     stage('Build') {
       steps {
-            sh '''python3 build.py --model-execution-role "$MODEL_EXECUTION_ROLE_ARN" \
+        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
+            /*sh '''python3 build.py --model-execution-role "$MODEL_EXECUTION_ROLE_ARN" \
                 --model-package-group-name "$SOURCE_MODEL_PACKAGE_GROUP_NAME" \
                 --sagemaker-project-id "$SAGEMAKER_PROJECT_ID" \
+                --sagemaker-project-name "$SAGEMAKER_PROJECT_NAME" \
+                --export-cfn-params-tags "True"
+            '''*/
+            sh '''python3 build.py --model-execution-role "$MODEL_EXECUTION_ROLE_ARN" \
+                --model-package-group-name "$SOURCE_MODEL_PACKAGE_GROUP_NAME" \
                 --sagemaker-project-name "$SAGEMAKER_PROJECT_NAME" \
                 --export-cfn-params-tags "True"
             '''
@@ -40,11 +54,12 @@ pipeline {
             sh '''cat $EXPORT_TEMPLATE_STAGING_CONFIG
                 cat $EXPORT_TEMPLATE_PROD_CONFIG
             '''
+        }    
       }
     }
     stage('Staging Deploy') {
       steps {
-        withAWS(region:"${AWS_REGION}") {
+        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
           cfnUpdate(stack: "${STACK_NAME_DEPLOY_STAGING}",
             file: "${EXPORT_TEMPLATE_NAME}",
             paramsFile: "${EXPORT_TEMPLATE_STAGING_PARAMS}",
@@ -56,7 +71,7 @@ pipeline {
     }
     stage('Test Staging') {
       steps {
-        withAWS(region:"${AWS_REGION}") {
+        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
           sh '''python3 test/test.py \
               --import-build-config $EXPORT_TEMPLATE_STAGING_CONFIG \
               --export-test-results $EXPORT_TEST_RESULTS
@@ -72,7 +87,7 @@ pipeline {
     }
     stage('Prod Deploy') {
       steps {
-        withAWS(region:"${AWS_REGION}") {
+        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
           cfnUpdate(stack: "${STACK_NAME_DEPLOY_PROD}",
             file: "${EXPORT_TEMPLATE_NAME}",
             paramsFile: "${EXPORT_TEMPLATE_PROD_PARAMS}",

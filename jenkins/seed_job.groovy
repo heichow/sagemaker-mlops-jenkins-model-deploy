@@ -8,14 +8,15 @@ if (awsCredentialId == null) {
   throw new DslException('Please pass AWS credential parameter ' + 'AWS_CREDENTIAL' )
 }
 
-def sagemakerProjectName = "jenkins-btd-1"
-def sagemakerProjectId = "p-hdzaivmsdryg"
-def sourceModelPackageGroupName = "jenkins-btd-1-p-hdzaivmsdryg"
-def modelExecutionRole = "arn:aws:iam::426907972901:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole"
-def awsRegion = "us-east-2"
-def artifactBucket = "sagemaker-project-p-hdzaivmsdryg"
+def sagemakerProjectName = "mlops-jenkins-yolov4"
+//def sagemakerProjectId = "p-hdzaivmsdryg"
+def sourceModelPackageGroupName = "mlops-jenkins-yolov4"
+def modelExecutionRole = "arn:aws:iam::468208999430:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole"
+def awsRegion = "us-east-1"
+def artifactBucket = "sagemaker-us-east-1-468208999430"
 
-def pipelineName = "sagemaker-" + sagemakerProjectName + "-" + sagemakerProjectId + "-modeldeploy"
+//def pipelineName = "sagemaker-" + sagemakerProjectName + "-" + sagemakerProjectId + "-modeldeploy"
+def pipelineName = "sagemaker-" + sagemakerProjectName + "-modeldeploy"
 
 // Get git details used in JOB DSL so that can be used for pipeline SCM also
 def jobName = getBinding().getVariables()['JOB_NAME']
@@ -30,11 +31,11 @@ pipelineJob(pipelineName) {
   description("Sagemaker Model Deploy Pipeline")
   keepDependencies(false)
   authenticationToken('token')
-  concurrentBuild(false)
+  //concurrentBuild(false)
   parameters {
     stringParam("ARTIFACT_BUCKET", artifactBucket, "S3 bucket to store training artifact")
     stringParam("SAGEMAKER_PROJECT_NAME", sagemakerProjectName, "Sagemaker Project Name")
-    stringParam("SAGEMAKER_PROJECT_ID", sagemakerProjectId, "Sagemaker Project Id")
+    // stringParam("SAGEMAKER_PROJECT_ID", sagemakerProjectId, "Sagemaker Project Id")
     stringParam("SOURCE_MODEL_PACKAGE_GROUP_NAME", sourceModelPackageGroupName, "Model Package Group Name")
     stringParam("MODEL_EXECUTION_ROLE_ARN", modelExecutionRole, "Role to be used by Model execution.")
     stringParam("AWS_REGION", awsRegion, "AWS region to use for creating entity")
