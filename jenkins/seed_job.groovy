@@ -3,10 +3,12 @@ import jenkins.model.Jenkins
 import hudson.model.AbstractProject
 
 // Check if AWS credential parameter is passed or not
-/*def awsCredentialId = getBinding().getVariables()['AWS_CREDENTIAL']
+/*
+def awsCredentialId = getBinding().getVariables()['AWS_CREDENTIAL']
 if (awsCredentialId == null) {
   throw new DslException('Please pass AWS credential parameter ' + 'AWS_CREDENTIAL' )
-}*/
+}
+*/
 
 def sagemakerProjectName = "mlops-jenkins-yolov4"
 //def sagemakerProjectId = "p-hdzaivmsdryg"
