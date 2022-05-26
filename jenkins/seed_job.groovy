@@ -11,10 +11,9 @@ if (awsCredentialId == null) {
 def sagemakerProjectName = "mlops-jenkins-yolov4"
 //def sagemakerProjectId = "p-hdzaivmsdryg"
 def sourceModelPackageGroupName = "mlops-jenkins-yolov4"
-def modelExecutionRole = "arn:aws:iam::468208999430:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole"
-def awsRegion = "us-east-1"
-def artifactBucket = "sagemaker-us-east-1-468208999430"
-
+def modelExecutionRole = "arn:aws:iam::221110525845:role/sagemaker-mlops-model-deplo-SageMakerExecutionRole-1DM68ZWLH7XBO"
+def awsRegion = "us-east-2"
+//def artifactBucket = "sagemaker-us-east-1-468208999430"
 //def pipelineName = "sagemaker-" + sagemakerProjectName + "-" + sagemakerProjectId + "-modeldeploy"
 def pipelineName = "sagemaker-" + sagemakerProjectName + "-modeldeploy"
 
@@ -33,7 +32,7 @@ pipelineJob(pipelineName) {
   authenticationToken('token')
   //concurrentBuild(false)
   parameters {
-    stringParam("ARTIFACT_BUCKET", artifactBucket, "S3 bucket to store training artifact")
+    //stringParam("ARTIFACT_BUCKET", artifactBucket, "S3 bucket to store training artifact")
     stringParam("SAGEMAKER_PROJECT_NAME", sagemakerProjectName, "Sagemaker Project Name")
     // stringParam("SAGEMAKER_PROJECT_ID", sagemakerProjectId, "Sagemaker Project Id")
     stringParam("SOURCE_MODEL_PACKAGE_GROUP_NAME", sourceModelPackageGroupName, "Model Package Group Name")

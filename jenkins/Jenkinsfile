@@ -34,7 +34,7 @@ pipeline {
     }
     stage('Build') {
       steps {
-        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
+        withAWS(region:"${AWS_REGION}"/*,credentials:"${AWS_CREDENTIAL}"*/) {
             /*sh '''python3 build.py --model-execution-role "$MODEL_EXECUTION_ROLE_ARN" \
                 --model-package-group-name "$SOURCE_MODEL_PACKAGE_GROUP_NAME" \
                 --sagemaker-project-id "$SAGEMAKER_PROJECT_ID" \
@@ -47,9 +47,9 @@ pipeline {
                 --export-cfn-params-tags "True"
             '''
 
-            sh '''aws cloudformation package --template endpoint-config-template.yml \
+            /*sh '''aws cloudformation package --template endpoint-config-template.yml \
                 --s3-bucket $ARTIFACT_BUCKET --output-template $EXPORT_TEMPLATE_NAME
-            '''
+            '''*/
 
             sh '''cat $EXPORT_TEMPLATE_STAGING_CONFIG
                 cat $EXPORT_TEMPLATE_PROD_CONFIG
@@ -59,7 +59,7 @@ pipeline {
     }
     stage('Staging Deploy') {
       steps {
-        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
+        withAWS(region:"${AWS_REGION}"/*,credentials:"${AWS_CREDENTIAL}"*/) {
           cfnUpdate(stack: "${STACK_NAME_DEPLOY_STAGING}",
             file: "${EXPORT_TEMPLATE_NAME}",
             paramsFile: "${EXPORT_TEMPLATE_STAGING_PARAMS}",
@@ -71,7 +71,7 @@ pipeline {
     }
     stage('Test Staging') {
       steps {
-        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
+        withAWS(region:"${AWS_REGION}"/*,credentials:"${AWS_CREDENTIAL}"*/) {
           sh '''python3 test/test.py \
               --import-build-config $EXPORT_TEMPLATE_STAGING_CONFIG \
               --export-test-results $EXPORT_TEST_RESULTS
@@ -87,7 +87,7 @@ pipeline {
     }
     stage('Prod Deploy') {
       steps {
-        withAWS(region:"${AWS_REGION}",credentials:"${AWS_CREDENTIAL}") {
+        withAWS(region:"${AWS_REGION}"/*,credentials:"${AWS_CREDENTIAL}"*/) {
           cfnUpdate(stack: "${STACK_NAME_DEPLOY_PROD}",
             file: "${EXPORT_TEMPLATE_NAME}",
             paramsFile: "${EXPORT_TEMPLATE_PROD_PARAMS}",
