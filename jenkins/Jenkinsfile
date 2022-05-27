@@ -16,14 +16,14 @@ pipeline {
                 returnStdout: true,
                 script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-${SAGEMAKER_PROJECT_ID}-deploy-prod"'
             ).trim()}"""*/
-          STACK_NAME_DEPLOY_STAGING = """${sh(
+          /*STACK_NAME_DEPLOY_STAGING = """${sh(
                 returnStdout: true,
                 script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-deploy-staging"'
             ).trim()}"""
           STACK_NAME_DEPLOY_PROD = """${sh(
                 returnStdout: true,
                 script: 'echo "sagemaker-${SAGEMAKER_PROJECT_NAME}-deploy-prod"'
-            ).trim()}"""
+            ).trim()}"""*/
           EXPORT_TEST_RESULTS = 'test-results.json'
   }
   stages {
@@ -50,6 +50,9 @@ pipeline {
             /*sh '''aws cloudformation package --template endpoint-config-template.yml \
                 --s3-bucket $ARTIFACT_BUCKET --output-template $EXPORT_TEMPLATE_NAME
             '''*/
+
+            aws cloudformation package --template endpoint-config-template.yml \
+                --output-template $EXPORT_TEMPLATE_NAME
 
             sh '''cat $EXPORT_TEMPLATE_STAGING_CONFIG
                 cat $EXPORT_TEMPLATE_PROD_CONFIG
