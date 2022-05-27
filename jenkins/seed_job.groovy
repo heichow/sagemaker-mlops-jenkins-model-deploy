@@ -20,7 +20,7 @@ def modelExecutionRole = "arn:aws:iam::221110525845:role/sagemaker-model-registr
 def stagingStackName = "sagemaker-mlops-jenkins-yolov4-deploy-staging"
 def prodStackName = "sagemaker-mlops-jenkins-yolov4-deploy-prod"
 //def pipelineName = "sagemaker-" + sagemakerProjectName + "-" + sagemakerProjectId + "-modeldeploy"
-def pipelineName = "sagemaker-" + sagemakerProjectName + "-deploy"
+def pipelineName = "sagemaker-" + sagemakerProjectName + "-modeldeploy" //DO NOT CHANGE! Hard code in Lambda webhook function
 
 
 // Get git details used in JOB DSL so that can be used for pipeline SCM also
