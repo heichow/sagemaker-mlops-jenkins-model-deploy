@@ -1,7 +1,7 @@
 pipeline {
   agent any
   environment {
-          EXPORT_TEMPLATE_NAME = 'template-export.yml'
+          EXPORT_TEMPLATE_NAME = 'endpoint-config-template.yml'//'template-export.yml'
           EXPORT_TEMPLATE_STAGING_CONFIG = 'staging-config-export.json'
           EXPORT_TEMPLATE_STAGING_PARAMS = 'staging-params-export.json'
           EXPORT_TEMPLATE_STAGING_TAGS = 'staging-tags-export.json'
@@ -50,10 +50,6 @@ pipeline {
             /*sh '''aws cloudformation package --template endpoint-config-template.yml \
                 --s3-bucket $ARTIFACT_BUCKET --output-template $EXPORT_TEMPLATE_NAME
             '''*/
-
-            sh '''aws cloudformation package --template endpoint-config-template.yml \
-                --output-template $EXPORT_TEMPLATE_NAME
-            '''
 
             sh '''cat $EXPORT_TEMPLATE_STAGING_CONFIG
                 cat $EXPORT_TEMPLATE_PROD_CONFIG
