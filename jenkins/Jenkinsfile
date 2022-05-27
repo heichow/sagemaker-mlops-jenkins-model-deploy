@@ -51,8 +51,9 @@ pipeline {
                 --s3-bucket $ARTIFACT_BUCKET --output-template $EXPORT_TEMPLATE_NAME
             '''*/
 
-            aws cloudformation package --template endpoint-config-template.yml \
+            sh '''aws cloudformation package --template endpoint-config-template.yml \
                 --output-template $EXPORT_TEMPLATE_NAME
+            '''
 
             sh '''cat $EXPORT_TEMPLATE_STAGING_CONFIG
                 cat $EXPORT_TEMPLATE_PROD_CONFIG
