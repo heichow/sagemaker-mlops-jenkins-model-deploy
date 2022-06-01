@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: MLOps - Model Deploy pipeline with Jenkins
+
+######################
+# Parameters section
+######################
+Parameters:
+  ModelRegistryName:
+    Type: String
+    Description: Name of the project
+    MinLength: 1
+    MaxLength: 32
+    AllowedPattern: ^[a-zA-Z](-*[a-zA-Z0-9])*
+    Default: mlops-jenkins-yolov4
+  # ModelPackageArn:
+  #   Type: String
+  #   Description: The trained Model Package ARN
+  #   Default: arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:model-package/mlops-jenkins-yolov4/1
+  # ModelExecutionRoleArn:
+  #   Type: String
+  #   Description: Execution role used for deploying the model.
+  #   Default: arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+  # StageName:
+  #   Type: String
+  #   Description:
+  #     The name for a project pipeline stage, such as Staging or Prod, for
+  #     which resources are provisioned and deployed.
+  #   AllowedValues:
+  #     - staging
+  #     - prod
+  #   Default: staging
+  
+######################
+# Resources section
+######################
+Resources:
+  # SageMaker - Create Model Registry with a sample model (version 1)
+  ModelPackageGroup:
+    Type: AWS::SageMaker::ModelPackageGroup
+    Properties:
+      ModelPackageGroupName: !Ref ModelRegistryName
+  ModelPackage:
+    Type: AWS::SageMaker::ModelPackage
+    Properties:
+      ModelPackageGroupName: !Ref ModelRegistryName
+      ModelApprovalStatus: Approved
+      InferenceSpecification: 
+        Containers: 
+          - Image: 763104351884.dkr.ecr.us-east-2.amazonaws.com/pytorch-inference:1.6-gpu-py3 # Deep Learning Container Image List: https://github.com/aws/deep-learning-containers/blob/master/available_images.md
+            #Framework: PYTORCH
+            #FrameworkVersion: 1.6
+            ModelDataUrl: https://aws-ml-blog-artifacts.s3.us-east-2.amazonaws.com/yolov4.tar.gz
+        SupportedRealtimeInferenceInstanceTypes: ['ml.g4dn.xlarge']
+        SupportedTransformInstanceTypes: ['ml.g4dn.xlarge']
+        SupportedContentTypes: ['application/x-image']
+        SupportedResponseMIMETypes: ['application/x-npy']
+    DependsOn: ModelPackageGroup
+  # Model:
+  #   Type: AWS::SageMaker::Model
+  #   Properties:
+  #     PrimaryContainer:
+  #       ModelPackageName: !GetAtt ModelPackage.ModelPackageArn #!Sub arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:model-package/${SageMakerProjectName}/1
+  #     ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn #!Sub arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+  SageMakerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - sagemaker.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+      Policies:
+      - PolicyName: SageMakerModelS3AccessPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+            - s3:ListBucket
+            Resource: rn:aws:s3:::*
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource: arn:aws:s3:::aws-ml-blog-artifacts*
+
+######################
+# Outputs section
+######################
+Outputs:
+  ModelPackageName: 
+    Description: SageMaker Model Package ARN
+    Value: !GetAtt ModelPackage.ModelPackageArn
+  ModelExecutionRole:
+    Description: SageMaker Model Execution Role
+    Value: !GetAtt SageMakerExecutionRole.Arn

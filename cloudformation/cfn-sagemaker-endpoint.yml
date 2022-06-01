@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: MLOps - Model Deploy pipeline with Jenkins
+
+######################
+# Parameters section
+######################
+Parameters:
+  SageMakerProjectName:
+    Type: String
+    Description: Name of the project
+    MinLength: 1
+    MaxLength: 32
+    AllowedPattern: ^[a-zA-Z](-*[a-zA-Z0-9])*
+    Default: mlops-jenkins-yolov4
+  ModelPackageName:
+    Type: String
+    Description: The trained Model Package ARN
+    Default: arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:model-package/mlops-jenkins-yolov4/1
+  ModelExecutionRoleArn:
+    Type: String
+    Description: Execution role used for deploying the model.
+    #Default: arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+  StageName:
+    Type: String
+    Description:
+      The name for a project pipeline stage, such as Staging or Prod, for
+      which resources are provisioned and deployed.
+    AllowedValues:
+      - staging
+      - prod
+    Default: staging
+  EndpointInstanceCount:
+    Type: Number
+    Description: Number of instances to launch for the endpoint.
+    MinValue: 1
+    Default: 1
+  EndpointInstanceType:
+    Type: String
+    Description: The ML compute instance type for the endpoint.
+    AllowedValues:
+      - ml.g4dn.xlarge
+    Default: ml.g4dn.xlarge
+
+######################
+# Resources section
+######################
+Resources:
+  # SageMaker - SageMaker Endpoint (Staging / Production)
+  Model:
+    Type: AWS::SageMaker::Model
+    Properties:
+      PrimaryContainer:
+        ModelPackageName: !Ref ModelPackageName #!Sub arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:model-package/${SageMakerProjectName}/1
+      ExecutionRoleArn: !Ref ModelExecutionRoleArn #!Sub arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+  EndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      ProductionVariants:
+        - InitialInstanceCount: !Ref EndpointInstanceCount
+          InitialVariantWeight: 1.0
+          InstanceType: !Ref EndpointInstanceType
+          ModelName: !GetAtt Model.ModelName
+          VariantName: AllTraffic
+  Endpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointName: !Sub ${SageMakerProjectName}-${StageName}
+      EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+
+######################
+# Outputs section
+######################
+Outputs:
+  CloudFormationStackName:
+    Description: Name of CloudFormation Stack
+    Value: !Ref AWS::StackName
+  EndpointName:
+    Description: Name of SageMaker Endpoint
+    Value: !GetAtt Endpoint.EndpointName

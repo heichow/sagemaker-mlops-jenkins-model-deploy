@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: MLOps - Model Deploy pipeline with Jenkins
+
+######################
+# Parameters section
+######################
+Parameters:
+  JenkinsInstanceName:
+    Type: String
+    Description: Name of the Jenkins Instance
+    MinLength: 1
+    MaxLength: 32
+    AllowedPattern: ^[a-zA-Z](-*[a-zA-Z0-9])*
+    Default: jenkins
+  ModelExecutionRoleArn:
+    Type: String
+    Description: Execution role used for deploying the model.
+    #Default: arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+
+######################
+# Resources section
+######################
+Resources:
+  # EC2 - Create Jenkins instance
+  JenkinsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t4g.medium
+      ImageId: ami-02cb75f995890cd96
+      SecurityGroupIds:
+        - !Ref JenkinsInstanceSecurityGroup
+      IamInstanceProfile: !Ref JenkinsInstanceProfile
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            sudo yum update –y
+            sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+            sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+            sudo yum upgrade
+            sudo amazon-linux-extras install java-openjdk11 -y
+            sudo yum install git -y
+            sudo yum install jenkins -y
+            sudo systemctl enable jenkins
+            sudo systemctl start jenkins
+      Tags:
+        - Key: Name
+          Value: !Ref JenkinsInstanceName
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref JenkinsInstance 
+  JenkinsInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP ingress
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+  JenkinsInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles: 
+        - !Ref JenkinsExecutionRole
+  JenkinsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+      - PolicyName: JenkinsExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:CreateBucket
+            - s3:PutObject
+            Resource: arn:aws:s3:::sagemaker-*
+          - Effect: Allow
+            Action:
+            - iam:PassRole
+            Resource: !Ref ModelExecutionRoleArn
+              #Fn::Sub:
+              #  arn:aws:iam::${AWS::AccountId}:role/service-role/AmazonSageMakerServiceCatalogProductsUseRole
+          - Effect: Allow
+            Action:
+            - sagemaker:CreatePipeline
+            - sagemaker:DescribePipeline
+            - sagemaker:DescribePipelineExecution
+            - sagemaker:ListPipelineExecutionSteps
+            - sagemaker:StartPipelineExecution
+            - sagemaker:UpdatePipeline
+            - sagemaker:ListModelPackages
+            - sagemaker:ListTags
+            - sagemaker:AddTags
+            - sagemaker:DeleteTags
+            - sagemaker:CreateModel
+            - sagemaker:CreateEndpointConfig
+            - sagemaker:CreateEndpoint
+            - sagemaker:DeleteModel
+            - sagemaker:DeleteEndpointConfig
+            - sagemaker:DeleteEndpoint
+            - sagemaker:DescribeEndpoint
+            - sagemaker:DescribeModel
+            - sagemaker:DescribeEndpointConfig
+            - sagemaker:UpdateEndpoint
+            Resource: 
+              Fn::Sub:
+                arn:aws:sagemaker:${AWS::Region}:${AWS::AccountId}:*
+          - Effect: Allow
+            Action:
+            - cloudformation:CreateStack
+            - cloudformation:DescribeStacks
+            - cloudformation:UpdateStack
+            - cloudformation:DeleteStack
+            Resource: 
+              Fn::Sub:
+                arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*
+
+######################
+# Outputs section
+######################
+Outputs:
+  JenkinsWebInterface:
+    Description: The URL of Jenkins Web Interface
+    Value: !Sub ${JenkinsInstance.PublicDnsName}:8080
+  JenkinsInstanceId:
+    Description: Jenkins Instance ID for SSH Tunnel, reminder with VPC endpoint for System Manager. awscli - aws ssm start-session --target <ec2-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
+    Value: !Ref JenkinsInstance
+  
+
